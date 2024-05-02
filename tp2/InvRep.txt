@@ -1,0 +1,347 @@
+Invariante de representacion SistemaCNE.java
+
+-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-
+
+en este archivo se describen los invariantes de representación de cuatro clases:
+- SistemaCNE
+- SistemaPresidente
+- SistemaDiputados
+- DHondt
+
+-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-
+
+
+
+███████ ██ ███████ ████████ ███████ ███    ███  █████   ██████ ███    ██ ███████ 
+██      ██ ██         ██    ██      ████  ████ ██   ██ ██      ████   ██ ██      
+███████ ██ ███████    ██    █████   ██ ████ ██ ███████ ██      ██ ██  ██ █████   
+     ██ ██      ██    ██    ██      ██  ██  ██ ██   ██ ██      ██  ██ ██ ██      
+███████ ██ ███████    ██    ███████ ██      ██ ██   ██  ██████ ██   ████ ███████
+
+
+
+//vars del sistema.
+    
+    distritos : Distrito[]
+    partidos : Partido[]
+
+    sysPresidente : SistemaPresidente;
+    sysDiputados : SistemaDiputados;
+
+
+
+pred InvRep(s: SistemaCNE) {
+
+    // sobre distritos : Distrito[]
+    
+        ( no hay distritos con nombre repetidos )
+            forall i, j : int ::
+                0 <= i < j < s.distritos.length ==>L
+                    s.distritos[i].nombre != s.distritos[j].nombre
+
+        ( las "bancas" en disputa de cada distrito son mayor a cero )
+            forall i : int ::
+                0 <= i < s.distritos.length ==>L
+                    s.distritos[i].bancas > 0
+
+        ( la "ultimaMesa" de cada distrito es mayor a cero )
+            forall i : int ::
+                0 <= i < s.distritos.length ==>L
+                    s.distritos[i].ultimaMesa > 0
+
+        ( y están ordenadas en orden creciente )
+            forall i : int ::
+                0 <= i < j < s.distritos.length ==>L
+                    s.distritos[i].ultimaMesa < s.distritos[j].ultimaMesa
+
+        ( hay por lo menos un distrito )
+            s.distritos.length > 0
+    
+
+
+    // sobre partidos : Partido[]
+
+        ( no hay partidos con nombres repetidos )
+            forall i, j : int ::
+                0 <= i < j < s.partidos.length ==>L
+                    s.partidos[i].nombre != s.partidos[j].nombre
+
+        ( hay por lo menos dos partidos y Blanco )
+            s.partidos.length > 2
+
+
+    // sobre sysPresidente
+
+        ( misma cantidad de partidos que SistemaCNE)
+            s.sysPresidente.cantPartidos = s.partidos.length
+
+
+    // sobre sysDiputados
+
+        ( misma cantidad de partidos )
+            s.sysDiputados.cantPartidos = s.partidos.length
+
+        ( misma cantidad de distritos )
+            s.sysDiputados.votosPorPartidoPorDistrito.length = s.distritos.length
+            s.sysDiputados.dhondtPorDistrito.length = s.distritos.length
+
+        ( cada distrito tiene la cantidad de bancas correspondiente )
+            forall d : int ::
+                0 <= d < s.distritos.length ==>
+                    s.sysDiputados.dhondtPorDistrito[d] == null
+                    ||
+                    s.sysDiputados.dhondtPorDistrito[d].cantBancas == s.distritos[d].bancas
+
+
+
+
+
+
+
+}
+
+-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-
+
+
+
+███████ ██ ███████ ████████ ███████ ███    ███  █████  ██████  ██████  ███████ ███████ ██ ██████  ███████ ███    ██ ████████ ███████ 
+██      ██ ██         ██    ██      ████  ████ ██   ██ ██   ██ ██   ██ ██      ██      ██ ██   ██ ██      ████   ██    ██    ██      
+███████ ██ ███████    ██    █████   ██ ████ ██ ███████ ██████  ██████  █████   ███████ ██ ██   ██ █████   ██ ██  ██    ██    █████   
+     ██ ██      ██    ██    ██      ██  ██  ██ ██   ██ ██      ██   ██ ██           ██ ██ ██   ██ ██      ██  ██ ██    ██    ██      
+███████ ██ ███████    ██    ███████ ██      ██ ██   ██ ██      ██   ██ ███████ ███████ ██ ██████  ███████ ██   ████    ██    ███████ 
+
+
+
+// vars
+
+    int cantPartidos : int
+
+    votosPorPartido : int[]
+    votosTotales : int
+
+    idPrimero; int
+    idSegundo; int
+
+pred InvRep(s: SistemaPresidente) {
+
+    // sobre cantPartidos: int
+        
+        ( hay por lo menos 2 partidos, y Blanco )
+            cantPartidos > 2
+
+    //sobre votosTotales : int
+        
+        ( votosTotales es siempre la sumatoria de votosPorPartido )
+            votosTotales == sum i: int :: 0 <= i < votosPorPartido.length :: votosPorPartido[i]  
+
+    //sobre votosPorPartido : int[]
+        
+        ( votosPorPartido es del largo de cantidad de partidos )
+            s.votosPorPartido.length == s.cantPartidos
+
+        ( los votos de cada partido son mayores o iguales a cero )
+            forall i : int ::
+                0 <= i < s.votosPorPartido.length ==>L
+                    s.votosPorPartido[i] >= 0
+
+    //sobre idPrimero e idSegundo : int
+
+        ( ambos están entre 0 y la cantidad de partidos, excluyendo Blanco )
+            0 <= idSegundo, idPrimero < s.cantPartidos-1
+
+        ( los votos del segundo son menores o iguales a los del primero )
+            s.votosPorPartido[idSegundo] <= s.votosPorPartido[idPrimero]
+}
+
+
+
+-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-
+
+
+
+███████ ██ ███████ ████████ ███████ ███    ███  █████  ██████  ██ ██████  ██    ██ ████████  █████  ██████   ██████  ███████ 
+██      ██ ██         ██    ██      ████  ████ ██   ██ ██   ██ ██ ██   ██ ██    ██    ██    ██   ██ ██   ██ ██    ██ ██      
+███████ ██ ███████    ██    █████   ██ ████ ██ ███████ ██   ██ ██ ██████  ██    ██    ██    ███████ ██   ██ ██    ██ ███████ 
+     ██ ██      ██    ██    ██      ██  ██  ██ ██   ██ ██   ██ ██ ██      ██    ██    ██    ██   ██ ██   ██ ██    ██      ██ 
+███████ ██ ███████    ██    ███████ ██      ██ ██   ██ ██████  ██ ██       ██████     ██    ██   ██ ██████   ██████  ███████ 
+
+
+
+//vars
+    cantPartidos : int
+    votosPorPartidoPorDistrito : int[][]
+    dhondtPorDistrito : DHondt[]
+
+pred InvRep(s: SistemaDiputados) {
+
+    // sobre cantPartidos: int
+
+        ( hay por lo menos dos partidos, y Blanco)
+            cantPartidos > 2;
+
+    //sobre votosPorPartidoPorDistrito : int[][]
+
+        ( como hay por lo menos un distrito, la longitud de votosPorPartidoPorDistrito es mayor a 0 )
+            s.votosPorPartidoPorDistrito.length > 0
+
+        ( cada posición correspondiente al distrito (fila) de la matriz, o es null o es un array con cantPartidos cantidad de partidos)
+            forall d : int ::
+                0 <= d < s.votosPorPartidoPorDistrito.length ==>
+                    s.votosPorPartidoPorDistrito[d] == null ||
+                    s.votosPorPartidoPorDistrito[d].length == cantPartidos 
+
+        ( los votos son mayores o iguales a cero siempre )
+            forall d : int ::
+                0 <= d < s.votosPorPartidoPorDistrito.length ==>
+                    s.votosPorPartidoPorDistrito[d] == null ||
+                    forall p : int ::
+                        0 <= p < cantPartidos
+                            s.votosPorPartidoPorDistrito[d][p] >= 0
+
+
+    //sobre dhondtPorDistrito : DHondt[]
+
+        ( Cada posición del array de heaps corresponde a un distrito )
+            s.dhondtPorDistrito.length == s.votosPorPartidoPorDistrito.length;
+
+        ( para cada distrito, si su DHondt está inicializado, este contiene la referencia a los votos de ese distrito)
+            forall idDistrito : int ::
+                0 <= idDistrito < s.dhondtPorDistrito.length ==>L
+                    s.dhondtPorDistrito[idDistrito] == null
+                    ||
+                    s.dhondtPorDistrito[idDistrito].votosRefe == s.votosPorPartidoPorDistrito[idDistrito]
+
+        ( para cada distrito, su cantidad de bancas en disputa es mayor a 0 )
+            forall idDistrito : int ::
+                0 <= idDistrito < s.dhondtPorDistrito.length ==>L
+                    s.dhondtPorDistrito[idDistrito] == null;
+                    ||
+                    s.dhondtPorDistrito[i].cantBancas > 0;
+
+
+        ( para cada distrito, su cantidad de partidos es igual a la cantidad de partidos del SistemaDiputados, excluyendo Blanco ) 
+            forall i : int ::
+                0 <= i < s.dhondtPorDistrito.length ==>L        
+                    s.dhondtPorDistrito[i].cantPartidos == s.cantPartidos - 1
+
+
+}
+
+-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-=x=-
+
+
+
+██████  ██   ██  ██████  ███    ██ ██████  ████████ 
+██   ██ ██   ██ ██    ██ ████   ██ ██   ██    ██    
+██   ██ ███████ ██    ██ ██ ██  ██ ██   ██    ██    
+██   ██ ██   ██ ██    ██ ██  ██ ██ ██   ██    ██    
+██████  ██   ██  ██████  ██   ████ ██████     ██    
+
+
+
+//vars del DHondt
+    
+    refeVotos : int[]
+    votosTotales : int
+
+    cantPartidos : int
+    cantBancas : int
+    
+    heap : Nodo[]
+    calculado : boolean
+    resultados : int[]
+
+    // vars de Nodo
+        cociente : int
+        divididoPor : int
+        idPartido : int
+
+new DHondt(votosPorPartidoPorDistrito[distrito.id], distrito.bancas)
+
+pred InvRep(D: DHondt) {
+
+    // sobre refeVotos: int []
+
+        ( la cantidad de partidos es siempre > 2 )
+            refeVotos.length > 2
+
+        ( los votos de cada partido son mayor o igual 0 )
+            forall i : int ::
+                0 <= i < refeVotos.length ==>
+                    refeVotos[i] >= 0
+
+    //sobre votosTotales
+
+        ( votosTotales es la sumatoria de los votos de cada partido )
+            votosTotales = (sum p: int :: 0 <= p < D.refeVotos.length :: D.refeVotos[p])
+
+
+    //sobre cantPartidos: 
+
+        ( cantPartidos excluye Blanco )
+            D.cantPartidos == D.refeVotos.length - 1
+
+    //sobre cantBancas:
+
+        ( cantidad de bancas mayor a 0 )
+            D.cantBancas > 0
+
+
+    //sobre Nodo[] heap:
+
+        // todas las siguientes cosas aplican solo si D.heap != null //
+
+        ( su longitud corresponde a la cantidad de partidos quitando los votos en blanco )
+            (D.heap.length == D.cantPartidos) 
+
+        ( el cociente de cada nodo es mayor al cociente de los hijos que tenga )
+            forall i : int ::
+                0 <= i < D.heap.length ==>L
+                    2*i + 1 < D.heap.length ==> D.heap[i].cociente >= D.heap[2*i + 1].cociente
+                    &&
+                    2*i + 2 < D.heap.length ==> D.heap[i].cociente >= D.heap[2*i + 2].cociente
+
+        ( en cada nodo "cociente" es 0 para los partidos que no superan el umbral; o si sí superan el umbral, el resultado de la división entera de sus votos por el número indicado en "divididoPor" )
+            forall i : int ::
+                0 <= i < D.heap.length ==>
+                    D.heap[i].cociente == if (superaUmbral(i)) then (D.refeVotos[D.heap[i].idPartido] / D.heap[i].divididoPor ) else ( 0 ) endif
+        
+        ( en cada nodo "divididoPor" está entre 1 y cantBancas+1 )
+            (forall i : int :: 
+                0 <= i < D.heap.length ==>L
+                    1 <= D.heap[i].divididoPor <= D.cantBancas + 1) //+1 en caso que uno gane todas las bancas
+
+        ( cada nodo contiene el id del partido que representa, y no hay más de un nodo por partido)
+            ((forall i : int :: 
+                0 <= i < D.heap.length ==>L
+                    0 <= D.heap[i].id < D.cantPartidos) 
+                &&
+                (forall i, j : int :: 
+                0 <= i,j < D.heap.length && D.heap[i].idPartido == D.heap[j].idPartido  ==>L
+                    D.heap[i] = D.heap[j]
+                ))
+
+    //sobre calculado:
+
+        ( si está calculado, la sumatoria de los divididoPor es igual a cantPartidos + cantBancas; en caso contrario, el heap no fue inicializado, o la sumatoria es igual a cantPartidos )
+            calculado ==> (sum i: int :: 0 <= i < D.heap.length :: D.heap[i].divididoPor) == D.cantPartidos + D.cantBancas
+            &&
+            !calculado ==> (D.heap == null || (sum i : int :: 0 <= i < D.heap.length :: D.heap[i].divididoPor) == D.cantPartidos)
+    
+    //sobre resultados
+
+        ( resultados tiene el largo de cantPartidos (excluye votos en blanco) )
+            (D.resultados.length == D.cantPartidos)
+
+        (si está calculado: su sumatoria es igual a la cantidad de bancas y contiene las bancas ganadas por los partidos de acuerdo al funcionamiento del heap )
+            calculado ==>
+                (sum i: int :: 0 <= i < D.resultados.length :: D.resultados[i]) == D.cantBancas &&
+                (forall i : int :: 
+                        0 <= i < D.resultados.length ==>L
+                            exists idNodo: int :: (heap[idNodo].idPartido == i) && (D.resultados[i] == heap[idNodo].divididoPor - 1)) 
+
+                
+            
+
+    
+}
